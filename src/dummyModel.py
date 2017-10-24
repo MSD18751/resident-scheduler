@@ -18,3 +18,5 @@ model.maximizeZ = Objective (expr= model.x, sense=maximize)
 
 #declaring the constraints
 model.Constraint1= Constraint (expr=model.x <=100) #x can't be more than 100
+
+#Does this change work?
