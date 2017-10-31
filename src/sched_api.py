@@ -55,22 +55,21 @@ class ModelSolver(object):
         self._solved = False
         self._vars = None
 
+        if not isinstance(model_file, str):
+            raise TypeError("Path must be a string")
+
         # Check if files exists
         _model_file = Path(model_file)
         if _model_file.is_file():
-            _ldr = importlib.find_loader(os.path.splitext(model_file)[0])
-            # Module exists, load it
-            if _ldr is not None:
-                try:
-                    _modelModule = _ldr.load_module()
-                    self._model = _modelModule.model
-                    self._optimizer = SolverFactory("glpk")
-                except ImportError as err:
-                    raise err
-                except AttributeError as err:
-                    raise err
-            else:
-                raise IOError("Could not load module")
+            try:
+                _modelModule = importlib.import_module(
+                    os.path.splitext(model_file)[0])
+                self._model = _modelModule.model
+                self._optimizer = SolverFactory("glpk")
+            except ImportError as err:
+                raise err
+            except AttributeError as err:
+                raise err
         else:
             raise OSError("Model file not found")
 
@@ -125,4 +124,6 @@ if __name__ == "__main__":
     except IOError as err:
         raise err
     except OSError as err:
+        raise err
+    except TypeError as err:
         raise err

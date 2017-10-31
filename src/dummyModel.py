@@ -8,7 +8,7 @@
 from pyomo.environ import * #importing PYOMO modeling objects
 
 #creating the model object
-model= ConcreteModel()
+model = ConcreteModel()
 
 #declaring the decision variables
 model.x = Var(within=NonNegativeReals)
