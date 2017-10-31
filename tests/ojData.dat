@@ -1,0 +1,10 @@
+set Quality:= 6 9;
+set Products:= juice bags;
+
+param Quantity:=
+6 120000
+9 100000;
+
+param Profit:=
+juice 0.45
+bags 0.30;

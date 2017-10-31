@@ -106,11 +106,33 @@ class ModelSolver(object):
         else:
             raise AttributeError("Model not ready for solving")
 
+        # Extract variables
         self._vars = {}
         for _objs in self._instance.component_objects(Var, active=True):
             _v_objs = getattr(self._instance, str(_objs))
+            self._vars[_v_objs.name] = {}
             for index in _v_objs:
-                self._vars[index] = _v_objs[index].value
+                self._vars[_v_objs.name][index] = _v_objs[index].value
+
+        # Extract parameters
+        self._params = {}
+        for _objs in self._instance.component_objects(Param, active=True):
+            _v_objs = getattr(self._instance, str(_objs))
+            _temp_param = _v_objs._data
+            self._params[str(_v_objs)] = _temp_param
+
+        # Extract sets
+        self._sets = {}
+        for _objs in self._instance.component_objects(Set, active=True):
+            _v_objs = getattr(self._instance, str(_objs))
+            if _v_objs._implicit_subsets is None:
+                self._sets[_v_objs.name] = _v_objs.value
+
+        # Extract objectives
+        self._objectives = {}
+        for _objs in self._instance.component_objects(Objective, active=True):
+            _v_objs = getattr(self._instance, str(_objs))
+            self._objectives[_v_objs.name] = _v_objs.expr()
 
 
 if __name__ == "__main__":
@@ -121,6 +143,9 @@ if __name__ == "__main__":
         mySolver.load_data(path2)
         mySolver.solve()
         print(mySolver._vars)
+        print(mySolver._params)
+        print(mySolver._sets)
+        print(mySolver._objectives)
     except IOError as err:
         raise err
     except OSError as err:

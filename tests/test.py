@@ -14,7 +14,7 @@ class TestAPI(unittest.TestCase):
         # Good import
         _pass = False
         try:
-            _ms = ModelSolver("dummyModel.py")
+            ModelSolver("dummyModel.py")
             _pass = True
         except Exception as err:
             pass
@@ -23,19 +23,19 @@ class TestAPI(unittest.TestCase):
 
         # No file
         with self.assertRaises(OSError):
-            _ms = ModelSolver("FAKEFILE")
+            ModelSolver("FAKEFILE")
 
         # File found, but it can't be imported
         with self.assertRaises(ImportError):
-            _ms = ModelSolver("not_a_python_file.txt")
+            ModelSolver("not_a_python_file.txt")
 
         # Python file found, but not a Pyomo model
         with self.assertRaises(AttributeError):
-            _ms = ModelSolver("test.py")
+            ModelSolver("test.py")
 
         # Check if param is a string
         with self.assertRaises(TypeError):
-            _ms = ModelSolver(5)
+            ModelSolver(5)
 
     def test_data_load(self):
         """
@@ -44,8 +44,15 @@ class TestAPI(unittest.TestCase):
 
         _ms = ModelSolver("dummyModel.py")
 
-        # fug
-        _pass = False
+        # No data file
+        _ms.load_data(None, load_data=False)
+        self.assertEqual(True, _ms._data is None)
+        self.assertEqual(True, _ms._instance is not None)
+
+        _ms = ModelSolver("ojModel.py")
+        _ms.load_data("ojData.dat")
+        self.assertEqual(True, _ms._data is not None)
+        self.asssertEqual(True, _ms._instance is not None)
 
 
 # Run tests
