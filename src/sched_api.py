@@ -108,31 +108,44 @@ class ModelSolver(object):
 
         # Extract variables
         self._vars = {}
-        for _objs in self._instance.component_objects(Var, active=True):
-            _v_objs = getattr(self._instance, str(_objs))
-            self._vars[_v_objs.name] = {}
-            for index in _v_objs:
-                self._vars[_v_objs.name][index] = _v_objs[index].value
+        for _var in self._instance.component_objects(Var, active=True):
+            _v_var = getattr(self._instance, str(_var))
+            self._vars[_v_var.name] = {}
+            for index in _v_var:
+                self._vars[_v_var.name][index] = _v_var[index].value
 
         # Extract parameters
         self._params = {}
-        for _objs in self._instance.component_objects(Param, active=True):
-            _v_objs = getattr(self._instance, str(_objs))
-            _temp_param = _v_objs._data
-            self._params[str(_v_objs)] = _temp_param
+        for _param in self._instance.component_objects(Param, active=True):
+            _v_param = getattr(self._instance, str(_param))
+            self._params[str(_v_param)] = _v_param._data
 
         # Extract sets
         self._sets = {}
-        for _objs in self._instance.component_objects(Set, active=True):
-            _v_objs = getattr(self._instance, str(_objs))
-            if _v_objs._implicit_subsets is None:
-                self._sets[_v_objs.name] = _v_objs.value
+        for _set in self._instance.component_objects(Set, active=True):
+            _v_set = getattr(self._instance, str(_set))
+            if _v_set._implicit_subsets is None:
+                self._sets[_v_set.name] = _v_set.value
 
         # Extract objectives
         self._objectives = {}
-        for _objs in self._instance.component_objects(Objective, active=True):
-            _v_objs = getattr(self._instance, str(_objs))
-            self._objectives[_v_objs.name] = _v_objs.expr()
+        for _obj in self._instance.component_objects(Objective, active=True):
+            _v_obj = getattr(self._instance, str(_obj))
+            self._objectives[_v_obj.name] = _v_obj.expr()
+
+        # Extract constraints
+        self._constraints = {}
+        for _con in self._instance.component_objects(Constraint, active=True):
+            _v_con = getattr(self._instance, str(_con))
+            self._constraints[_v_con.name] = {}
+            for index in _v_con:
+                # Probably not the best way to do this, but it works!
+                self._constraints[_v_con.name]['lower'] = \
+                    _v_con[index].lower.__str__()
+                self._constraints[_v_con.name]['upper'] = \
+                    _v_con[index].upper.__str__()
+                self._constraints[_v_con.name]['body'] = \
+                    _v_con[index].body.__call__()
 
 
 if __name__ == "__main__":
@@ -146,6 +159,7 @@ if __name__ == "__main__":
         print(mySolver._params)
         print(mySolver._sets)
         print(mySolver._objectives)
+        print(mySolver._constraints)
     except IOError as err:
         raise err
     except OSError as err:
