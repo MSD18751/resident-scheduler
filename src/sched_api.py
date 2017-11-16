@@ -62,9 +62,18 @@ class ModelSolver(object):
         _model_file = Path(model_file)
         if _model_file.is_file():
             try:
-                _modelModule = importlib.import_module(
-                    os.path.splitext(model_file)[0])
-                self._model = _modelModule.model
+                # Extract just the name of module, without path
+                _head, _tail = os.path.split(model_file)
+                _x = _tail or os.path.basename(_head)
+                _mod = os.path.splitext(_x)[0]
+
+                # Import module using import lib
+                spec = importlib.util.spec_from_file_location(_mod, model_file)
+                _model_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_model_module)
+
+                # Get model file from module
+                self._model = _model_module.model
                 self._optimizer = SolverFactory("glpk")
             except ImportError as err:
                 raise err
