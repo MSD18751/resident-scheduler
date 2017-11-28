@@ -14,9 +14,6 @@ model.x12 = Var(within=NonNegativeReals) #This is the number of drivers starting
 model.x16 = Var(within=NonNegativeReals) #This is the number of drivers starting a shift at 16h00
 model.x20 = Var(within=NonNegativeReals) #This is the number of drivers starting a shift at 20h00
 
-#Declare Objective Function
-model.MinimizeDrivers = Objective(expr = model.x0 + model.x4 + model.x8 + model.x12 + model.x16 + model.x20, sense=minimize)
-
 #Declare Constraints
 model.con1 = Constraint(expr = model.x0 + model.x20 >= 4) # This makes sure there are atleast 4 drivers working
 model.con2 = Constraint(expr = model.x4 + model.x0 >= 8) # This makes sure there are atleast 8 drivers working
