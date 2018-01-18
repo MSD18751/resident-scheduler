@@ -4,7 +4,10 @@
 from pyomo.environ import *
 
 #Declare Model
-model = ConcreteModel()
+model = AbstractModel()
+
+#Declare Sets
+model.DriverDemand = 
 
 #Decalre Decision Variables
 model.x0 = Var(within=NonNegativeReals) #This is the number of drivers starting a shift at 0h00
