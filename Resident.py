@@ -34,5 +34,9 @@ x = var(r, u, t, within=binary)  # 1 if resident r rotates in unit u in week t
 w = var(r, u, t, within=binary)  # 1 if resident r starts in unit u in week t
 delta = var(u, t, within=binary)  # 1 if unit u begins a rotation in week t
 
+Xtc1 = Var(within=binary)  # 1 if Taylor does Cardio Week 1
+Xtc2 = Var(within=binary)  # 1 if Taylor does Cardio Week 2
+Xtn1 = Var(within=binary)  # 1 if Taylor does Neuro Week 1
+Xtn2 = Var(within=binary)  #1 if Taylor does Neuro Week 2
 
 # Objective Functions
