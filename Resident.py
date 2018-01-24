@@ -7,26 +7,38 @@ opt = SolverFactory(’glpk’)
 model = AbstractModel()
 
 # Declare sets
-y = set()      # residency years
-r = set()      # set of residents
-r_i = set()    # set of residents of year i
-c = set()      # set of clinic units
-g = set()      # clinic rotational groups 
-t = set()      # set of weeks
-v = set()      # vacation unit
-a = set()      # ambulatory care units
-i = set()      # inpatient care units
-e = set()      # elective units
-h_u = set()    # resident year needed for unit u 
-u = set()      # set of units
-q = set()      # units requiring a group every week
-n = set()      # night shift rotations
+Y = set()      # residency years
+R = set()      # set of residents
+R_i = set()    # set of residents of year i
+C = set()      # set of clinic units
+G = set()      # clinic rotational groups 
+T = set()      # set of weeks
+V = set()      # vacation unit
+A = set()      # ambulatory care units
+I = set()      # inpatient care units
+E = set()      # elective units
+H_u = set()    # resident year needed for unit u 
+U = set()      # set of units
+Q = set()      # units requiring a group every week
+N = set()      # night shift rotations
 theta = set()  # subset considered for pahse 1
-s = set()      # standby unit
-p = set()      # clinic rotational policy
+S = set()      # standby unit
+P = set()      # clinic rotational policy
 
 # Parameters
-phi_p = param(p[1])
+pi_p = param(P[1])  # number of weeks between clinic weeks
+s = param()  # number of consecutive weeks at clinic
+h_gc = # groups associated to each clinic
+I_rg = # residents assigned to each group
+zeta_u = # weeks required in rotation u over 3 years
+alpha_u = # weeks required in rotation in a year
+lambda_u =  # number of consecutive weeks required in a rotation
+phi_iu =  # number of residents of year i needed to work unit u
+tau =  # minimum number of clinic rotations in a year
+omega_ru =  # number of rotations resident r has already done in u
+v = # minimum number of weeks between vacation periods
+m =  # minimum number of residents required in clinic each week
+psi_rt = param  # resident vacation preference
 
 
 # Decision variables
@@ -40,3 +52,6 @@ Xtn1 = Var(within=binary)  # 1 if Taylor does Neuro Week 1
 Xtn2 = Var(within=binary)  #1 if Taylor does Neuro Week 2
 
 # Objective Functions
+def Resident_Satisfaction(model):
+    return sum(psi[r,t] * x[r,u,t] for r in R for t in T for u in V)
+model.MaxResSatisfaction = Objective(rule = Resident_Satisfaction, sense = maximize)
