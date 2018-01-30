@@ -32,5 +32,5 @@ def quality_2_rule (model):
     return((-1*model.X[6,'bags']+2*model.X[9,'bags']) >=0)
 model.quality_bags = Constraint(rule=quality_2_rule)
 
-#code to solve the model
+# code to solve the model
 # pyomo solve --solver=glpk ojModel.py ojData.dat --summary>>ojResults.txt
