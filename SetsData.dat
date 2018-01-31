@@ -1,0 +1,26 @@
+set PRODUCTS :=0 1 2 3 4;
+set REFIRING :=0 1 2 3;
+set METHODS:=1 2;
+
+param methodYield: 1 2:=
+0 .30 .20
+1 .30 .20
+2 .20 .25
+3 .15 .20
+4 .05 .15;
+
+
+param productRequirement:=
+0 0
+1 3000
+2 3000
+3 2000
+4 1000;
+
+param percentYield: 0 1 2 3:=
+0 .30 0 0 0
+1 .25 .30 0 0
+2 .15 .30 .40 0
+3 .20 .20 .30 .50
+4 .10 .20 .30 .50;
+
