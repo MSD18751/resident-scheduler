@@ -7,23 +7,23 @@ opt = SolverFactory(’glpk’)
 model = AbstractModel()
 
 # Declare sets
-Y = set()      # residency years
-R = set()      # set of residents
-R_i = set()    # set of residents of year i
-C = set()      # set of clinic units
-G = set()      # clinic rotational groups 
-T = set()      # set of weeks
-V = set()      # vacation unit
-A = set()      # ambulatory care units
-I = set()      # inpatient care units
-E = set()      # elective units
-H_u = set()    # resident year needed for unit u 
-U = set()      # set of units
-Q = set()      # units requiring a group every week
-N = set()      # night shift rotations
-theta = set()  # subset considered for pahse 1
-S = set()      # standby unit
-P = set()      # clinic rotational policy
+model.Y = set(within = 1,2,3)      # residency years NOTE THIS IS HARDCODED RIGHT NOW
+model.R = set()      # set of residents
+model.R_i = set(model.Y)    # set of residents of year i
+model.C = set()      # set of clinic units
+model.G = set()      # clinic rotational groups 
+model.T = set()      # set of weeks
+model.V = set()      # vacation unit
+model.A = set()      # ambulatory care units
+model.I = set()      # inpatient care units
+model.E = set()      # elective units
+model.H_u = set()    # resident year needed for unit u 
+model.U = set()      # set of units
+model.Q = set()      # units requiring a group every week
+model.N = set()      # night shift rotations
+model.theta = set()  # subset considered for pahse 1
+model.S = set()      # standby unit
+model.P = set()      # clinic rotational policy
 
 # Parameters
 pi_p = param(P[1])  # number of weeks between clinic weeks
