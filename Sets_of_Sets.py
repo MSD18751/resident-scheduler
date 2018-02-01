@@ -54,7 +54,7 @@ def amountofP3_rule(model):
 model.amountofP3 = Constraint(rule=amountofP3_rule)
 
 def amountofP4_rule(model, m, j):
-    return P[4] == sum(model.methodYield[4, m]*model.M[m] + 
+    return P[4] == sum(model.methodYield[4, m]*model.M[m] +
         model.percentYield[4, j]*model.R[j] 
         for m in model.METHODS for j in model.REFIRING)
 model.amountofP4 = Constraint(rule=amountofP4_rule)
