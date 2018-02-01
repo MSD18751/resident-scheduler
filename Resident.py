@@ -1,34 +1,45 @@
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
+import pandas as import pd
+
 # Create a solver
 opt = SolverFactory(’glpk’)
+
+#Create a dataframe
+filename = str(input("Input the file path"))
+dataframe = pd.read_excel(filename)
+
+print(dataframe)
+
+
+
 
 # Declare model
 model = AbstractModel()
 
 # Declare sets
-model.Y = set(within = 1,2,3)      # residency years NOTE THIS IS HARDCODED RIGHT NOW
-model.R = set()      # set of residents
-model.R_i = set(model.Y)    # set of residents of year i
-model.C = set()      # set of clinic units
-model.G = set()      # clinic rotational groups 
-model.T = set()      # set of weeks
-model.V = set()      # vacation unit
-model.A = set()      # ambulatory care units
-model.I = set()      # inpatient care units
-model.E = set()      # elective units
-model.H_u = set()    # resident year needed for unit u 
-model.U = set()      # set of units
-model.Q = set()      # units requiring a group every week
-model.N = set()      # night shift rotations
-model.theta = set()  # subset considered for pahse 1
-model.S = set()      # standby unit
-model.P = set()      # clinic rotational policy
+model.Y = Set(within = 1,2,3)      # residency years NOTE THIS IS HARDCODED RIGHT NOW
+model.R = Set()      # set of residents
+model.R_i = Set(model.Y)    # set of residents of year i
+model.C = Set()      # set of clinic units
+model.G = Set()      # clinic rotational groups 
+model.T = Set()      # set of weeks
+model.V = Set()      # vacation unit
+model.A = Set()      # ambulatory care units
+model.I = Set()      # inpatient care units
+model.E = Set()      # elective units
+model.H_u = Set()    # resident year needed for unit u 
+model.U = Set()      # set of units
+model.Q = Set()      # units requiring a group every week
+model.N = Set()      # night shift rotations
+model.theta = Set()  # subset considered for pahse 1
+model.S = Set()      # standby unit
+model.P = Set()      # clinic rotational policy
 
 # Parameters
-pi_p = param(P[1])  # number of weeks between clinic weeks
-s = param()  # number of consecutive weeks at clinic
-h_gc = # groups associated to each clinic
+pi_p = Param(P[1])  # number of weeks between clinic weeks
+s = Param()  # number of consecutive weeks at clinic
+h_gc = Param()# groups associated to each clinic
 I_rg = # residents assigned to each group
 zeta_u = # weeks required in rotation u over 3 years
 alpha_u = # weeks required in rotation in a year
