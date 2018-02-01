@@ -5,17 +5,19 @@ import pandas as import pd
 # Create a solver
 opt = SolverFactory(’glpk’)
 
-#Create a dataframe
-dflists = pd.read_excel("sample_data/mandatory_units_and clinic_groups.xlsx")
+# Create a dataframe
+dfsets = pd.read_excel("sample_data/DataFile.xlsx", sheet_name = "Sets")
+dfparams = pd.read_excel("sample_data/DataFile.xlsx", sheet_name = "Parameters")
 
-print(dflists)
+print(dfsets)
+print(dfparams)
 
 # Declare model
 model = AbstractModel()
 
 # Declare sets
-model.Y = Set(within = 1,2,3)      # residency years NOTE THIS IS HARDCODED RIGHT NOW
-model.R = Set()      # set of residents
+model.Y = Set(dfparams[Year Level].unique())      # residency year
+model.R = Set(dfparams[RESIDENT ID])      # set of residents
 model.R_i = Set(model.Y)    # set of residents of year i
 model.C = Set()      # set of clinic units
 model.G = Set()      # clinic rotational groups 
