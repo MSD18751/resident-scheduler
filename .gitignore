@@ -100,3 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 .DS_Store
+housesales_HF.csv
+PandasTest.py
+ResidentSampleData.xlsx
+sample_data/~$DataFile.xlsx
+sample_data/~$Vacation_Preference.xlsx
+~$ResidentSampleData.xlsx
