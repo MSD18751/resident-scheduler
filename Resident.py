@@ -6,13 +6,9 @@ import pandas as import pd
 opt = SolverFactory(’glpk’)
 
 #Create a dataframe
-filename = str(input("Input the file path"))
-dataframe = pd.read_excel(filename)
+dflists = pd.read_excel("sample_data/mandatory_units_and clinic_groups.xlsx")
 
-print(dataframe)
-
-
-
+print(dflists)
 
 # Declare model
 model = AbstractModel()
