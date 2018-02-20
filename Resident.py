@@ -1,6 +1,6 @@
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
-import pandas as import pd
+import pandas as pd
 
 # Create a solver
 opt = SolverFactory(’glpk’)
