@@ -2,10 +2,6 @@ import pandas as pd
 import pyomo.environ as pyomo
 from pyomo.opt import SolverFactory
 
-<<<<<<< HEAD
-# ---Declare a Model---
-model = AbstractModel()
-=======
 def read_excel(filename):
     """Read special Excel spreadsheet to input dict.
     
@@ -70,4 +66,3 @@ def create_model(data):
 opt = SolverFactory("glpk")
 instance = model.create_instance()
 instance.display()
->>>>>>> a5875cb5d9b3db30a3f47b4f70666455a1ec9055
