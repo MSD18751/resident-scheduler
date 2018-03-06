@@ -10,7 +10,7 @@ def read_excel(filename):
         filename: path to a spreadsheet file
         
     Returns
-        dict of DataFrames, to be passed to create_model()
+        dictionary of DataFrames, to be passed to create_model()
     """
     with pd.ExcelFile(filename) as xls:
         units = xls.parse('Unit definitions').set_index('Unit')
@@ -36,7 +36,7 @@ def create_model(data):
     model.R = pyomo.Set(initialize=model.data["Residents"].index.values)  # set of residents
     model.U = pyomo.Set(initialize=model.data["Units"].index)  # set of units
     model.Ri = pyomo.Set(initialize=model.data["Residents"]["Year_Level"])
-    model.Theta = pyomo.Set(initialize="MICU_D,MICU_N,Twig,OPD")  # Critical units
+    model.Theta = pyomo.Set(initialize=("MICU_D", "MICU_N", "Twig", "OPD"))  # Critical units
 
 
 
@@ -46,21 +46,20 @@ def create_model(data):
 
     # making a set of tuples for min and max duration
     
-    for i, j in zip(model.data["Units"]["Duration_Min"].values, model.data["Units"]["Duration_Max"].values):
-        lst.append((i, j))
-    model.Lambda = pyomo.Param(model.U, within=(lst))  # number of weeks for each unit
+    lambdadict = {}
+    for i in data["Units"].index:
+        lambdadict.update({i: list((range(model.data["Units"].loc[i]["Duration_Min"], model.data["Units"].loc[i]["Duration_Max"]+1)))})
+    
+   # print(lambdadict)
+    model.Lambda = pyomo.Param(model.U, validate=lambdadict, default=0)  # number of weeks for each unit
+    print(model.Lambda)
 
-    lst = []
-
-    for i, j, k, l, m, n in zip(model.data["Units"]["R1Min"].values,
-                                model.data["Units"]["R1Max"].values,
-                                model.data["Units"]["R2Min"].values,
-                                model.data["Units"]["R2Max"].values,
-                                model.data["Units"]["R3Min"].values,
-                                model.data["Units"]["R3Max"].values):
-        lst.append((i, j, k, l, m, n))
-
-    model.Phi = pyomo.Param(model.U, within=(lst))  # min residents of year i
+    # p = {1: 1, 2: 4, 3: 9}
+    # model.A = pyomo.Set(initialize=[1,2,3])
+    # model.p = pyomo.Param(model.A, initialize=p)
+    # model.x = pyomo.Var(model.A, within=pyomo.NonNegativeReals)
+    #model.o = pyomo.Objective(expr=sum(model.p[i]*model.x[i] for i in model.A))
+    #model.Phi = pyomo.Param(model.U, within=(lst))  # min residents of year i
 
     # Solve the problem
 
