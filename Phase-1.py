@@ -1,5 +1,6 @@
 import pandas as pd
 import pyomo.environ as pyomo
+import numpy as np
 from pyomo.opt import SolverFactory
 
 
@@ -48,11 +49,11 @@ def create_model(data):
     
     lambdadict = {}
     for i in data["Units"].index:
-        lambdadict.update({i: list((range(model.data["Units"].loc[i]["Duration_Min"], model.data["Units"].loc[i]["Duration_Max"]+1)))})
+        lambdadict.update({i: int(np.mean([model.data["Units"].loc[i]["Duration_Min"], model.data["Units"].loc[i]["Duration_Max"]]))})
     
-   # print(lambdadict)
-    model.Lambda = pyomo.Param(model.U, validate=lambdadict, default=0)  # number of weeks for each unit
-    print(model.Lambda)
+    print(lambdadict)
+    model.Lambda = pyomo.Param(model.U, initialize=lambdadict, default=0)  # number of weeks for each unit
+    #print(model.Lambda)
 
     # p = {1: 1, 2: 4, 3: 9}
     # model.A = pyomo.Set(initialize=[1,2,3])
