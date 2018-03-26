@@ -6,9 +6,13 @@ set R:=
 5
 6;
 
-set U:=
-A
-B;
+set A:=
+Peds
+Ortho;
+
+set C:=
+Clinic1
+Clinic2;
 
 set T:=
 1
@@ -16,7 +20,14 @@ set T:=
 3
 4;
 
-param V:=
+set P:=
+1+1;
+
+set Q:=
+0
+1;
+
+param psi:=
 1   1   0
 1   2   1  
 1   3   0
@@ -41,3 +52,9 @@ param V:=
 6   2   0
 6   3   2
 6   4   0;
+
+param naught_p:=
+1+1 1;
+
+param s:=
+1+1 1;
