@@ -1,11 +1,23 @@
 import pandas as pd
 import pyomo.environ as pyomo
+import numpy as np
 from pyomo.opt import SolverFactory
 
-<<<<<<< HEAD
-# ---Declare a Model---
-model = AbstractModel()
-=======
+def makedict(dictname, query):
+    """makes a dict to use for defining sets
+    
+    Args:
+        dictname: name of dict
+        query: formula to use
+        
+    Returns:
+        dictionary with relevant keys and values for pyomo set initialization
+        """
+
+    dictname = {}
+
+
+
 def read_excel(filename):
     """Read special Excel spreadsheet to input dict.
     
@@ -13,7 +25,7 @@ def read_excel(filename):
         filename: path to a spreadsheet file
         
     Returns
-        dict of DataFrames, to be passed to create_model()
+        dictionary of DataFrames, to be passed to create_model()
     """
     with pd.ExcelFile(filename) as xls:
         units = xls.parse('Unit definitions').set_index('Unit')
@@ -26,48 +38,153 @@ def read_excel(filename):
 
 # Declare a Model
 
-def create_model(data):
+def create_model(data, policy=4, model_np=52):
     """create pyomo abstract model"""
 
     # Make the model
-    model = pyomo.AbstractModel()    # creates an abstract model
-    model.name = "Resident Scheduling Model"  # sets the model name 
-    model.model.data = model.data  # assigns model model.data
+    model = pyomo.AbstractModel()  # creates an abstract model
+    model.name = "Resident Scheduling Model"  # sets the model name
+    model.data = data  # assigns model data
 
     # Define sets
-    model.Y = pyomo.Set(initialize=model.model.data["Residents"]["Year_Level"].values.unique())  # set of resident years
-    model.R = pyomo.Set(initialize=model.model.data["Residents"].index.values)  # set of residents
-    model.U = pyomo.Set(initialize=model.model.data["Units"].index)  # set of units
-    model.Ri = pyomo.Set(initialize=model.model.data["Residents"]["Year_Level"])
-    model.Theta = pyomo.Set(initialize="MICU_D,MICU_N,Twig,OPD")  # Critical units
 
-
-
+    # model.y is the set of resident years
+    model.Y = pyomo.Set(
+        initialize=model.data["Residents"]["Year_Level"].unique())
+    # model.R is the set of residents
+    model.R = pyomo.Set(
+        initialize=model.data["Residents"].index.values)
+    # model.A is the set of ambulatory units
+    model.A = pyomo.Set(
+        initialize=model.data["Units"].query(
+            "Unit_type == 'Ambulatory'").index.values)
+    # model.C is the set of clinical units
+    model.C = pyomo.Set(
+        initialize=model.data["Units"].query(
+            "Unit_type == 'Clinic'").index.values)
+    # model.E is the set of elective units
+    model.E = pyomo.Set(
+        initialize=model.data["Units"].query(
+            "Unit_type == 'Elective'").index.values)  
+    # model.I is the set of Inpatient units
+    model.I = pyomo.Set(
+        initialize=model.data["Units"].query(
+            "Unit_type == 'Inpatient'").index.values) 
+    # model.V is the vacation unit
+    model.V = pyomo.Set(
+        initialize=model.data["Units"].query(
+            "Unit_type == 'Vacation'").index.values)  
+    # model.U is the set of all units as a union of A, C, E, I, and V
+    model.U = model.A | model.C | model.E | model.I | model.V
+    # model.N is the subset of units that are night shifts
+    model.N = pyomo.Set(
+        within=model.U,
+        initialize=model.data["Units"].query(
+            "Day_Night == 'Night'").index.values)
+    # model.Theta is the subset of units solved for in round 1
+    model.Theta = pyomo.Set(
+        within=model.U,
+        initialize=model.data["Units"].query(
+            "round_1 == 'Yes'").index)
+    # define a dict to store possible year levels {1: None, 2: None, 3: None}
+    Ridict = dict.fromkeys(model.data["Residents"]["Year_Level"])
+    # update dict to have each key have a list referenced to it
+    # {1: [], 2: [], 3: []}
+    for i in Ridict:
+        Ridict.update({i: []})
+    # update each list in the dict to contain the students in each year
+    # {1: [1, 2, ..., 19], 2: [20, 21, ..., 38], 3: [39, 40, ..., 57]}
+    for i in model.data["Residents"].index.values:
+        Ridict[model.data["Residents"].iloc[i-1]["Year_Level"]].append(i)
+    # use this crazy dict to initialize Ri the set of residents in each year
+    model.Ri = pyomo.Set(model.Y, initialize=Ridict)
+    # model.T is the number of weeks (n) we're scheduling (1, 2, 3, ..., n+1)
+    # the n+1 bit means you need an extra one to end at the number you want
+    model.T = pyomo.Set(initialize=range(1, model_np+1))
+    # model.G is the clinic rotational groups
+    model.G = pyomo.Set(
+        initialize=model.data["Residents"]["Clinic_Groups"].unique())
+    # define a dict for Hu
+    Hudict = dict.fromkeys(model.data["Units"].index)
+    # make each key in the dict a list and add years accepted
+    for i in Hudict:
+        Hudict.update({i: []})
+        if (model.data["Units"].loc[[i], ["R1Min"]].values >= 1):
+            Hudict[i].append(1)
+        if (model.data["Units"].loc[[i], ["R2Min"]].values >= 1):
+            Hudict[i].append(2)
+        if (model.data["Units"].loc[[i], ["R3Min"]].values >= 1):
+            Hudict[i].append(3)
+    # use that dict to define model.H
+    # which is the set of residents allowed for each unit
+    model.H = pyomo.Set(model.U, initialize=Hudict)
+    # model.S is the standby unit
+    model.S = pyomo.Set()
+    # model.P is the clinic protational policy
+    model.P = pyomo.Set(initialize=["4+1", "8+2"])
+    # model.Q is the subset of sets that have to have a rotation every week
+    model.Q = pyomo.Set(
+        within=model.U,
+        initialize=model.data["Units"].query(
+            "Student_Req == 'Yes'").index.values)
     # Define parameters
-
-    lst = []
-    # making a set of tuples for min and max duration
-    for i, j in zip(model.data["Units"]["Duration_Min"].values, model.data["Units"]["Duration_Max"].values):
-        lst.append((i, j))
     
+    # model.naught_p is the num of weeks before a resident has to return to a clinic
+    model.naught_p = pyomo.Param(initialize=policy)
+    # making a set of tuples for min and max duration
+    
+    lambdadict = {} 
+    lambdalst = []
+    for i in data["Units"].index:
+        lambdadict.update({i: int(np.mean(
+            [model.data["Units"].loc[i]["Duration_Min"],
+                model.data["Units"].loc[i]["Duration_Max"]]))})
+        lambdalst.append(int(np.mean(
+            [model.data["Units"].loc[i]["Duration_Min"],
+                model.data["Units"].loc[i]["Duration_Max"]])))
+    
+    # model.Lambda is the number of weeks for each unit
+    model.Lambda_u = pyomo.Param(model.U, initialize=lambdadict, default=0)
 
-    model.Lambda = pyomo.Param(model.U, within=(lst))  # number of weeks for each unit
+    # model.s is the number of rotations in the first model.phi + s weeks
+    s = int(policy/max(lambdalst))
+    model.s = pyomo.Param(initialize=s)
+    # model.h_g_c is 1 if group g is assigned to group C, 0 otherwise
+    h_g_c_dict={}
+    # for i in 
+    # model.h_g_c = pyomo.Param(model.G, model.C, initialize=)
+    I_r_g_dict = {}
+    for r in model.data["Residents"].index.values:
+        for g in model.data["Residents"]["Clinic_Groups"].unique():
+            if model.data["Residents"].iloc[r-1]["Clinic_Groups"] == g:
+                I_r_g_dict[r, g] = 1
+            else:
+                I_r_g_dict[r, g] = 0
+    # model.I_r_g_dict is 1 if the resident is in unit g 0 otherwise
+    model.I_r_g = pyomo.Param(model.R, model.G, initialize=I_r_g_dict)
+    # model_alpha is the min and max rotation duration for each unit
+    model_alpha = {}
+    for u in data["Units"].index.values:
+        model_alpha[(u, "min")] = model.data["Units"].loc[u, "Rotation_Min"]
+        model_alpha[(u, "max")] = model.data["Units"].loc[u, "Rotation_Max"]
+    # model.tau is the min number of roataions
+    tau = (model_np/(policy+s))
+    model.tau = pyomo.Param(initialize=tau)
+    # model.omega_r_u is the amount of time each returning resident
+    # has been in each unit already
+    omega_r_u_dict = {}
+    for i in r in model.data["Residents"].index.values:
+        for u in list(model.data["Units"]["CardFloor":"VAC"])
+    model.omega_r_u = pyomo.Param(model.R, model.U, initialize=, default=0)
+    # Solve the problem
+    opt = SolverFactory("glpk")
+    instance = model.create_instance(data)
+    instance.pprint()
 
-    lst = []
-    for i, j, k, l, m, n in zip(
-        model.data["Units"]["R1Min"].values,
-        model.data["Units"]["R1Max"].values,
-        model.data["Units"]["R2Min"].values,
-        model.data["Units"]["R2Max"].values,
-        model.data["Units"]["R3Min"].values,
-        model.data["Units"]["R3Max"].values):
-        lst.append((i, j, k, l, m, n))
 
-    model.Phi = pyomo.Param(model.U, within=(lst))  # min residents of year i
+def main():
+    file = "sample_data/DataFile.xlsx"
+    model_data = read_excel(file)
+    create_model(data=model_data, policy=8, )
 
-# Solve the problem
-
-opt = SolverFactory("glpk")
-instance = model.create_instance()
-instance.display()
->>>>>>> a5875cb5d9b3db30a3f47b4f70666455a1ec9055
+main()
