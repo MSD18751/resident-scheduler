@@ -38,7 +38,7 @@ def read_excel(filename):
 
 # Declare a Model
 
-def create_model(data):
+def create_model(data, policy=4, model_np=52):
     """create pyomo abstract model"""
 
     # Make the model
@@ -100,7 +100,7 @@ def create_model(data):
     model.Ri = pyomo.Set(model.Y, initialize=Ridict)
     # model.T is the number of weeks (n) we're scheduling (1, 2, 3, ..., n+1)
     # the n+1 bit means you need an extra one to end at the number you want
-    model.T = pyomo.Set(initialize=range(1, 53))
+    model.T = pyomo.Set(initialize=range(1, model_np+1))
     # model.G is the clinic rotational groups
     model.G = pyomo.Set(
         initialize=model.data["Residents"]["Clinic_Groups"].unique())
@@ -128,21 +128,54 @@ def create_model(data):
         initialize=model.data["Units"].query(
             "Student_Req == 'Yes'").index.values)
     # Define parameters
-
+    
+    # model.naught_p is the num of weeks before a resident has to return to a clinic
+    model.naught_p = pyomo.Param(initialize=policy)
     # making a set of tuples for min and max duration
     
-    lambdadict = {}
+    lambdadict = {} 
+    lambdalst = []
     for i in data["Units"].index:
-        lambdadict.update({i: int(np.mean([model.data["Units"].loc[i]["Duration_Min"], model.data["Units"].loc[i]["Duration_Max"]]))})
-    model.Lambda = pyomo.Param(model.U, initialize=lambdadict, default=0)  # number of weeks for each unit
+        lambdadict.update({i: int(np.mean(
+            [model.data["Units"].loc[i]["Duration_Min"],
+                model.data["Units"].loc[i]["Duration_Max"]]))})
+        lambdalst.append(int(np.mean(
+            [model.data["Units"].loc[i]["Duration_Min"],
+                model.data["Units"].loc[i]["Duration_Max"]])))
+    
+    # model.Lambda is the number of weeks for each unit
+    model.Lambda_u = pyomo.Param(model.U, initialize=lambdadict, default=0)
 
-    # p = {1: 1, 2: 4, 3: 9}
-    # model.A = pyomo.Set(initialize=[1,2,3])
-    # model.p = pyomo.Param(model.A, initialize=p)
-    # model.x = pyomo.Var(model.A, within=pyomo.NonNegativeReals)
-    #model.o = pyomo.Objective(expr=sum(model.p[i]*model.x[i] for i in model.A))
-    #model.Phi = pyomo.Param(model.U, within=(lst))  # min residents of year i
-
+    # model.s is the number of rotations in the first model.phi + s weeks
+    s = int(policy/max(lambdalst))
+    model.s = pyomo.Param(initialize=s)
+    # model.h_g_c is 1 if group g is assigned to group C, 0 otherwise
+    h_g_c_dict={}
+    # for i in 
+    # model.h_g_c = pyomo.Param(model.G, model.C, initialize=)
+    I_r_g_dict = {}
+    for r in model.data["Residents"].index.values:
+        for g in model.data["Residents"]["Clinic_Groups"].unique():
+            if model.data["Residents"].iloc[r-1]["Clinic_Groups"] == g:
+                I_r_g_dict[r, g] = 1
+            else:
+                I_r_g_dict[r, g] = 0
+    # model.I_r_g_dict is 1 if the resident is in unit g 0 otherwise
+    model.I_r_g = pyomo.Param(model.R, model.G, initialize=I_r_g_dict)
+    # model_alpha is the min and max rotation duration for each unit
+    model_alpha = {}
+    for u in data["Units"].index.values:
+        model_alpha[(u, "min")] = model.data["Units"].loc[u, "Rotation_Min"]
+        model_alpha[(u, "max")] = model.data["Units"].loc[u, "Rotation_Max"]
+    # model.tau is the min number of roataions
+    tau = (model_np/(policy+s))
+    model.tau = pyomo.Param(initialize=tau)
+    # model.omega_r_u is the amount of time each returning resident
+    # has been in each unit already
+    omega_r_u_dict = {}
+    for i in r in model.data["Residents"].index.values:
+        for u in list(model.data["Units"]["CardFloor":"VAC"])
+    model.omega_r_u = pyomo.Param(model.R, model.U, initialize=, default=0)
     # Solve the problem
     opt = SolverFactory("glpk")
     instance = model.create_instance(data)
@@ -152,6 +185,6 @@ def create_model(data):
 def main():
     file = "sample_data/DataFile.xlsx"
     model_data = read_excel(file)
-    create_model(model_data)
+    create_model(data=model_data, policy=8, )
 
 main()
