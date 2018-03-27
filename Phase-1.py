@@ -30,15 +30,19 @@ def read_excel(filename):
     with pd.ExcelFile(filename) as xls:
         units = xls.parse('Unit definitions').set_index('Unit')
         residents = xls.parse('Parameters').set_index('Resident_ID')
+        history = xls.parse('Past').set_index('Resident_ID')
+        sets = xls.parse('Sets').set_index("Clinic_Group")
         
     data = {
         'Units': units,
-        'Residents': residents}
+        'Residents': residents,
+        'History': history,
+        'Sets': sets}
     return data
 
 # Declare a Model
 
-def create_model(data, policy=4, model_np=52):
+def create_model(data, policy=4, model_np=52, model_v=4, model_m=4):
     """create pyomo abstract model"""
 
     # Make the model
@@ -150,9 +154,14 @@ def create_model(data, policy=4, model_np=52):
     s = int(policy/max(lambdalst))
     model.s = pyomo.Param(initialize=s)
     # model.h_g_c is 1 if group g is assigned to group C, 0 otherwise
-    h_g_c_dict={}
-    # for i in 
-    # model.h_g_c = pyomo.Param(model.G, model.C, initialize=)
+    h_g_c_dict = {}
+    for g in model.data["Sets"].index.values:
+        for c in list(data["Units"].query("Unit_type == 'Clinic'").index.values):
+            if model.data["Sets"].loc[g, "Clinic"] == c:
+                h_g_c_dict[(g,c)] = 1
+            else:
+                h_g_c_dict[(g,c)] = 0 
+    model.h_g_c = pyomo.Param(model.G, model.C, initialize=h_g_c_dict)
     I_r_g_dict = {}
     for r in model.data["Residents"].index.values:
         for g in model.data["Residents"]["Clinic_Groups"].unique():
@@ -163,23 +172,46 @@ def create_model(data, policy=4, model_np=52):
     # model.I_r_g_dict is 1 if the resident is in unit g 0 otherwise
     model.I_r_g = pyomo.Param(model.R, model.G, initialize=I_r_g_dict)
     # model_alpha is the min and max rotation duration for each unit
-    model_alpha = {}
+    model_alpha_u = {}
+    model_zeta_u = {}
     for u in data["Units"].index.values:
-        model_alpha[(u, "min")] = model.data["Units"].loc[u, "Rotation_Min"]
-        model_alpha[(u, "max")] = model.data["Units"].loc[u, "Rotation_Max"]
+        model_alpha_u[(u, "min")] = model.data["Units"].loc[u, "Weeks_Min"]
+        model_alpha_u[(u, "max")] = model.data["Units"].loc[u, "Weeks_Max"]
+        model_zeta_u[(u, "min")] = 3 * model.data["Units"].loc[u, "Weeks_Min"]
+        model_zeta_u[(u, "max")] = 3 * model.data["Units"].loc[u, "Weeks_Max"]
+    
+    print(model_zeta_u)
     # model.tau is the min number of roataions
     tau = (model_np/(policy+s))
     model.tau = pyomo.Param(initialize=tau)
     # model.omega_r_u is the amount of time each returning resident
     # has been in each unit already
     omega_r_u_dict = {}
-    for i in r in model.data["Residents"].index.values:
-        for u in list(model.data["Units"]["CardFloor":"VAC"])
-    model.omega_r_u = pyomo.Param(model.R, model.U, initialize=, default=0)
+    for r in model.data["History"].index.values:
+        for u in list(model.data["History"].columns):
+            omega_r_u_dict[(r, u)] = model.data["History"].loc[r, u]
+    model.omega_r_u = pyomo.Param(
+        model.R, model.U, initialize=omega_r_u_dict, default=0)
+    # model.psi_r_t is th evacation preferences of each resident for each week
+    psi_r_t_dict = {}
+    for r in model.data["Residents"].index.values:
+        for t in range(1, model_np+1):
+            psi_r_t_dict[(r, t)] = model.data["Residents"].loc[
+                (r, str("Week_" + str(t)))]
+    model.psi_r_t = pyomo.Param(model.R, model.T, initialize=psi_r_t_dict)
+    model.v = pyomo.Param(initialize=model_v)
+    model.m = pyomo.Param(initialize=model_m)
+    model_Phi_y_u = {}
+    for y in list(model.data["Residents"]["Year_Level"].unique()):
+        for u in model.data["Units"].index:
+            for i in list(("Min", "Max")):
+                model_Phi_y_u[(y, u, i)] = model.data["Units"].loc[u, str("R"+str(y)+i)]
+
     # Solve the problem
     opt = SolverFactory("glpk")
     instance = model.create_instance(data)
     instance.pprint()
+    
 
 
 def main():
