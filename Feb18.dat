@@ -21,7 +21,7 @@ set T:=
 4;
 
 set P:=
-1+1;
+one_one;
 
 set Q:=
 0
@@ -54,7 +54,7 @@ param psi:=
 6   4   0;
 
 param naught_p:=
-1+1 1;
+one_one 1;
 
 param s:=
-1+1 1;
+one_one 1;
