@@ -42,7 +42,7 @@ def read_excel(filename):
 
 # Declare a Model
 
-def create_model(data, policy=4, model_np=52, model_v=4, model_m=4):
+def create_model(data, policy=4, model_np=52, model_v=1):
     """create pyomo abstract model"""
 
     # Make the model
@@ -200,7 +200,11 @@ def create_model(data, policy=4, model_np=52, model_v=4, model_m=4):
                 (r, str("Week_" + str(t)))]
     model.psi_r_t = pyomo.Param(model.R, model.T, initialize=psi_r_t_dict)
     model.v = pyomo.Param(initialize=model_v)
-    model.m = pyomo.Param(initialize=model_m)
+    m = 0
+    for u in model.data["Units"].query("Unit_type == 'Clinic'").index:
+        for y in model.data["Residents"]["Year_Level"].unique():
+            m = m + model.data["Units"].loc[u, str("R"+str(y)+"Min")]
+    model.m = pyomo.Param(initialize=m)
     model_Phi_y_u = {}
     for y in list(model.data["Residents"]["Year_Level"].unique()):
         for u in model.data["Units"].index:
