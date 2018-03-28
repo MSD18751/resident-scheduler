@@ -28,12 +28,12 @@ model.U = model.C | model.A   # set of units
 model.P = pyomo.Set()   # a set of the types of the rotation policies
 model.Q = pyomo.Set()
 
+currentpolicy = "one_one"
+
 # ---Define parameters---
 model.psi = pyomo.Param(model.R, model.T) # the vacation preference of resident r for week t
-model.naught_p = pyomo.Set(initialize = 1)
-model.s = pyomo.Set(initialize = 1)
-# model.naught_p = pyomo.(model.P) # the number of weeks between clinical rotations
-#model.s = pyomo.Param(model.P) # the number of weeks a clinical rotation lasts
+model.naught_p = pyomo.Param(model.P) # the number of weeks between clinical rotations
+model.s = pyomo.Param(model.P) # the number of weeks a clinical rotation lasts
 model.alpha_dict = {}
 model.alpha_dict[("Clinic1", "min")] = 2
 model.alpha_dict[("Clinic2", "min")] = 2
@@ -61,12 +61,12 @@ def Cons15(model, t, r):
 model.NoClones = pyomo.Constraint(model.T, model.R, rule = Cons15)
 
 def Cons9(model, t, r, c):
-    return sum(model.X[r,c,t + (q * 1)]for q in model.Q) >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
+    return sum (model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]for q in model.Q) >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
         #list(range(model.alpha_dict[(c,"min")]+1))) # Establishes rotation policy
 
     #return sum(model.X[r,c,min(t + q * (model.naught_p+model.s), model.np)]for q in model.Q) >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
 
-model.ClinicRotation = pyomo.Constraint(model.T, model.R, model.C, rule = Cons9)
+model.ClinicRotation = pyomo.Constraint(list(range(1,5)), model.R, model.C, rule = Cons9)
 
 #def Cons9(model, t, r, c):
  #   return sum(model.X[r,c,min(t+q(model.naught_p+model.s),model.np)] 
