@@ -23,9 +23,6 @@ set T:=
 set P:=
 one_one;
 
-set Q:=
-0
-1;
 
 param psi:=
 1   1   0

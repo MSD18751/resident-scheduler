@@ -26,9 +26,10 @@ model.U = model.C | model.A   # set of units
 #model.theta = pyomo.Set()   # subset considered for pahse 1
 #model.S = pyomo.Set()   # standby unit
 model.P = pyomo.Set()   # a set of the types of the rotation policies
-model.Q = pyomo.Set()
+
 
 currentpolicy = "one_one"
+model_np = 4
 
 # ---Define parameters---
 model.psi = pyomo.Param(model.R, model.T) # the vacation preference of resident r for week t
@@ -55,23 +56,28 @@ def Cons14(model, t, u):
 
 model.Residents = pyomo.Constraint(model.T, model.U, rule = Cons14)    # the assignment constraint for number of residents working
 
-def Cons15(model, t, r):
+def Cons15(model, r, t):
     return sum(model.X[r,u,t] for u in model.U) <= 1 # makes sure that every resident is assign to max 1 place each week
 
-model.NoClones = pyomo.Constraint(model.T, model.R, rule = Cons15)
+model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
-def Cons9(model, t, r, c):
-    return sum (model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]for q in model.Q) >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
-        #list(range(model.alpha_dict[(c,"min")]+1))) # Establishes rotation policy
+def Cons9(model, r, c, t):
+    for r in model.R:
+        for c in model.C:
+            for t in list(range(1,2)):
+                sumofX = 0
+                q = 0
+                while t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy])) <= model_np:
+                    sumofX = sumofX + model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]
+                    q = q + 1
+                return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
 
-    #return sum(model.X[r,c,min(t + q * (model.naught_p+model.s), model.np)]for q in model.Q) >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
-
-model.ClinicRotation = pyomo.Constraint(list(range(1,5)), model.R, model.C, rule = Cons9)
+model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1,2)), rule = Cons9)
 
 #def Cons9(model, t, r, c):
  #   return sum(model.X[r,c,min(t+q(model.naught_p+model.s),model.np)] 
   #  >= model.alpha_dict[c,min] * model.W[r,c,t] for q in range(model.alpha_dict[c,min])) # Establishes rotation policy
-
+#model.naught_p[currentpolicy]+model.s[currentpolicy])
 #model.ClinicRotation = pyomo.Constraint(range(model.naught_p + model.s), model.R, model.C, rule = Cons9)
 
 # ---Create an instance---
