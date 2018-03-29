@@ -218,7 +218,7 @@ def create_model(data, policy=4, model_np=52, model_v=1):
      def Cons9(model, r, c, t):
          for r in model.R:
              for c in model.C:
-                 for t in list(range(1,model.naught_p[policy_type] + model.s)):
+                 for t in list(range(1,model.naught_p[policy_type] + model.s + 1)):
                      sumofX = 0
                      q = 0
                      while t + (q * (model.naught_p[policy_type] + model.s)) <= model_np:
@@ -226,7 +226,7 @@ def create_model(data, policy=4, model_np=52, model_v=1):
                          q = q + 1
                      return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
 
-     model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p[policy_type] +s)), rule = Cons9)
+     model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p[policy_type] + s + 1)), rule = Cons9)
 
     # Solve the problem
     opt = SolverFactory("glpk")
