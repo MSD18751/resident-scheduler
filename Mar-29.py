@@ -253,6 +253,10 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
 
     model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
+    def Cons16(model, r, u, t):
+        return sum(model.X[r, u, t] for u in model.U and not model.H_u) == 0
+    model.NoYoungFolks = pyomo.Constraint(model.Ri, model.U, model.T, rule = Cons16)
+
     # Solve the problem
     opt = SolverFactory("glpk")
     instance = model.create_instance(data)
