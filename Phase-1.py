@@ -3,21 +3,6 @@ import pyomo.environ as pyomo
 import numpy as np
 from pyomo.opt import SolverFactory
 
-def makedict(dictname, query):
-    """makes a dict to use for defining sets
-    
-    Args:
-        dictname: name of dict
-        query: formula to use
-        
-    Returns:
-        dictionary with relevant keys and values for pyomo set initialization
-        """
-
-    dictname = {}
-
-
-
 def read_excel(filename):
     """Read special Excel spreadsheet to input dict.
     
