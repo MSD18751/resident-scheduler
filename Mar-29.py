@@ -202,8 +202,8 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.psi_r_t = pyomo.Param(model.R, model.T, initialize=psi_r_t_dict)
 
     # ---Define variables---
-    model.X = pyomo.Var(model.R, model.U, model.T, domain = pyomo.Binary)    # resident r does/doesn't work unit u week t
-    model.W = pyomo.Var(model.R, model.U, model.T, domain = pyomo.Binary)    # resident r does/doesn't START rotation unit u week t
+    model.X = pyomo.Var(model.R, model.U, model.T, domain = pyomo.Binary, initialize=0)    # resident r does/doesn't work unit u week t
+    model.W = pyomo.Var(model.R, model.U, model.T, domain = pyomo.Binary, initialize=0)    # resident r does/doesn't START rotation unit u week t
     model.delta = pyomo.Var(model.U, model.T, domain = pyomo.Binary)    # unit u does/doesn't START a rotation in week t
 
     # ---Define objective function---
@@ -239,9 +239,14 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.FirstClinic = pyomo.Constraint(model.R, model.C, rule = Cons10)
     
     def Cons11(model, r, t, c, g):
+        return model.X[r,c,t] <= model.I_r_g[r,g] * model.h_g_c[g,c]
+
+    model.ClinicHistory = pyomo.Constraint(model.R, model.T, model.C, model.G, rule = Cons11)
+
+    def Cons12(model, t, c):
         return sum(sum(model.I_r_g[r,g] * model.h_g_c[g,c] * model.W[r,c,t] for g in model.G) for r in model.R) >= model.m
 
-    model.ClinicVerification = pyomo.Constraint(model.R, model.T, model.C, model.G, rule = Cons11)
+    model.ClinicVerification = pyomo.Constraint(list(range(1, naught_p[policy_type] + 1)), model.C, rule = Cons12)
 
     def Cons14(model, t, u):
         return model_Phi_y_u[(y, u, "Min")] <= sum(model.X[r,u,t] for r in model.R) <= model_Phi_y_u[(y, u, "Max")]    # make sure at least 2 residents are working unit u every week
@@ -253,9 +258,9 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
 
     model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
-    def Cons16(model, r, u, t):
-        return sum(model.X[r, u, t] for u in model.U and not model.H_u) == 0
-    model.NoYoungFolks = pyomo.Constraint(model.Ri, model.U, model.T, rule = Cons16)
+    # def Cons16(model, r, u, t):
+    #     return sum(model.X[r, u, t] for u in model.U and not model.H_u) == 0
+    # model.NoYoungFolks = pyomo.Constraint(model.Ri, model.U, model.T, rule = Cons16)
 
     # Solve the problem
     opt = SolverFactory("glpk")
