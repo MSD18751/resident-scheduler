@@ -118,6 +118,7 @@ def create_model(data, policy=4, model_np=52, model_v=1):
     
     # model.naught_p is the num of weeks before a resident has to return to a clinic
     model.naught_p = pyomo.Param(initialize=policy)
+    naught_p = policy
     # making a set of tuples for min and max duration
     
     lambdadict = {} 
@@ -214,18 +215,18 @@ def create_model(data, policy=4, model_np=52, model_v=1):
 
     model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
-    # def Cons9(model, r, c, t):
-    #     for r in model.R:
-    #         for c in model.C:
-    #             for t in list(range(1,2)):
-    #                 sumofX = 0
-    #                 q = 0
-    #                 while t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy])) <= model_np:
-    #                     sumofX = sumofX + model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]
-    #                     q = q + 1
-    #                 return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
+     def Cons9(model, r, c, t):
+         for r in model.R:
+             for c in model.C:
+                 for t in list(range(1,model.naught_p[policy_type] + model.s + 1)):
+                     sumofX = 0
+                     q = 0
+                     while t + (q * (model.naught_p[policy_type] + model.s)) <= model_np:
+                         sumofX = sumofX + model.X[r,c,t + (q * (model.naught_p[polcy_type] + model.s))]
+                         q = q + 1
+                     return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
 
-    # model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1,2)), rule = Cons9)
+     model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p[policy_type] + s + 1)), rule = Cons9)
 
     # Solve the problem
     opt = SolverFactory("glpk")
