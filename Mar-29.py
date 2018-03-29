@@ -270,7 +270,7 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     instance.display()
 
 def main():
-    file = "sample_data/DataFile.xlsx"
+    file = "sample_data/DataFile-small.xlsx"
     model_data = read_excel(file)
     create_model(data=model_data, policy_type="4+1")
 
