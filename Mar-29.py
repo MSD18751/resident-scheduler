@@ -213,16 +213,6 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximization problem of the function defined above
 
     # ---Define constraints---
-    def Cons14(model, t, u):
-        return 1 <= sum(model.X[r,u,t] for r in model.R) <= 3    # make sure at least 2 residents are working unit u every week
-
-    model.Residents = pyomo.Constraint(model.T, model.U, rule = Cons14)    # the assignment constraint for number of residents working
-
-    def Cons15(model, r, t):
-        return sum(model.X[r,u,t] for u in model.U) <= 1 # makes sure that every resident is assign to max 1 place each week
-
-    model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
-
     def Cons9(model, r, c, t):
         for r in model.R:
             for c in model.C:
@@ -235,6 +225,33 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
                     return sumofX >= model_alpha_u[(c,"min")] * model.W[r,c,t]
 
     model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p[policy_type] + s + 1)), rule = Cons9)
+
+    def Cons10(model, r, c):
+        for r in model.R:
+            for c in model.C:
+                sumofX = 0
+                t = 1
+                while t <= (model.naught_p[policy_type] + model.s):
+                    sumofX = sumofX + model.X[r,c,t]
+                    t = t + 1
+                return sumofX == 1
+
+    model.FirstClinic = pyomo.Constraint(model.R, model.C, rule = Cons10)
+    
+    def Cons11(model, r, t, c, g):
+        return sum(sum(model.I_r_g[r,g] * model.h_g_c[g,c] * model.W[r,c,t] for g in model.G) for r in model.R) >= model.m
+
+    model.ClinicVerification = pyomo.Constraint(model.R, model.T, model.C, model.G, rule = Cons11)
+
+    def Cons14(model, t, u):
+        return model_Phi_y_u[(y, u, "Min")] <= sum(model.X[r,u,t] for r in model.R) <= model_Phi_y_u[(y, u, "Max")]    # make sure at least 2 residents are working unit u every week
+
+    model.Residents = pyomo.Constraint(model.T, model.U, rule = Cons14)    # the assignment constraint for number of residents working
+
+    def Cons15(model, r, t):
+        return sum(model.X[r,u,t] for u in model.U) <= 1 # makes sure that every resident is assign to max 1 place each week
+
+    model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
     # Solve the problem
     opt = SolverFactory("glpk")
