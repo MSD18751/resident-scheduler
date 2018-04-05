@@ -42,17 +42,17 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.R = pyomo.Set(
         initialize=model.data["Residents"].index.values)
         # define a dict to store possible year levels {1: None, 2: None, 3: None}
-    Ridict = dict.fromkeys(model.data["Residents"]["Year_Level"])
+    R_ydict = dict.fromkeys(model.data["Residents"]["Year_Level"])
     # update dict to have each key have a list referenced to it
     # {1: [], 2: [], 3: []}
-    for i in Ridict:
-        Ridict.update({i: []})
+    for y in R_ydict:
+        R_ydict.update({y: []})
     # update each list in the dict to contain the students in each year
     # {1: [1, 2, ..., 19], 2: [20, 21, ..., 38], 3: [39, 40, ..., 57]}
-    for i in model.data["Residents"].index.values:
-        Ridict[model.data["Residents"].iloc[i-1]["Year_Level"]].append(i)
-    # use this crazy dict to initialize Ri the set of residents in each year
-    model.Ri = pyomo.Set(model.Y, initialize=Ridict)
+    for y in model.data["Residents"].index.values:
+        R_ydict[model.data["Residents"].iloc[y-1]["Year_Level"]].append(y)
+    # use this crazy dict to initialize R_i the set of residents in each year
+    model.R_y = pyomo.Set(model.Y, initialize=R_ydict)
     # model.C is the set of clinical units
     model.C = pyomo.Set(
         initialize=model.data["Units"].query(
@@ -85,14 +85,11 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     # define a dict for Hu
     H_u_dict = dict.fromkeys(model.data["Units"].index)
     # make each key in the dict a list and add years accepted
-    for i in H_u_dict:
-        H_u_dict.update({i: []})
-        if (model.data["Units"].loc[[i], ["R1Min"]].values >= 1):
-            H_u_dict[i].append(1)
-        if (model.data["Units"].loc[[i], ["R2Min"]].values >= 1):
-            H_u_dict[i].append(2)
-        if (model.data["Units"].loc[[i], ["R3Min"]].values >= 1):
-            H_u_dict[i].append(3)
+    for u in H_u_dict:
+        H_u_dict.update({u: []})
+        for y in model.data["Residents"]["Year_Level"].unique():
+            if (model.data["Units"].loc[[u], [str("R"+str(y)+"Max")]].values >= 1):
+                H_u_dict[u].append(y)
     # use that dict to define model.H
     # which is the set of residents allowed for each unit
     model.H_u = pyomo.Set(model.U, initialize=H_u_dict)
@@ -213,7 +210,7 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximization problem of the function defined above
 
     # ---Define constraints---
-    def Cons9(model, r, c, t):
+    def Cons9(model):
         for r in model.R:
             for c in model.C:
                 for t in list(range(1,model.naught_p[policy_type] + model.s + 1)):
@@ -224,9 +221,9 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
                          q = q + 1
                     return sumofX >= model_alpha_u[(c,"min")] * model.W[r,c,t]
 
-    model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p[policy_type] + s + 1)), rule = Cons9)
+    model.ClinicRotation = pyomo.Constraint(rule = Cons9)
 
-    def Cons10(model, r, c):
+    def Cons10(model):
         for r in model.R:
             for c in model.C:
                 sumofX = 0
@@ -236,7 +233,7 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
                     t = t + 1
                 return sumofX == 1
 
-    model.FirstClinic = pyomo.Constraint(model.R, model.C, rule = Cons10)
+    model.FirstClinic = pyomo.Constraint(rule = Cons10)
     
     def Cons11(model, r, t, c, g):
         return model.X[r,c,t] <= model.I_r_g[r,g] * model.h_g_c[g,c]
@@ -249,29 +246,43 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.ClinicVerification = pyomo.Constraint(list(range(1, naught_p[policy_type] + 1)), model.C, rule = Cons12)
 
     def Cons14(model, t, u):
-        return model_Phi_y_u[(y, u, "Min")] <= sum(model.X[r,u,t] for r in model.R) <= model_Phi_y_u[(y, u, "Max")]    # make sure at least 2 residents are working unit u every week
+        return model_Phi_y_u[(y, u, "Min")] <= sum(model.X[r,u,t] for r in model.R) <= model_Phi_y_u[(y,u,"Max")]
 
-    model.Residents = pyomo.Constraint(model.T, model.U, rule = Cons14)    # the assignment constraint for number of residents working
+    model.Residents = pyomo.Constraint(model.T, model.U, rule = Cons14)
+
+#    def Cons14(model):
+#        for u in model.U:
+#            for t in model.T:
+#                for y in H_u_dict[u]:
+#                    return model_Phi_y_u[(y, u, "Min")] <= sum(model.X[r,u,t] for r in model.R_y[y]) <= model_Phi_y_u[(y, u, "Max")]    # make sure at least 2 residents are working unit u every week
+
+#    model.EachUnitGetsResidents = pyomo.Constraint(rule = Cons14)
 
     def Cons15(model, r, t):
         return sum(model.X[r,u,t] for u in model.U) <= 1 # makes sure that every resident is assign to max 1 place each week
 
     model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
-    # def Cons16(model, r, u, t):
-    #     return sum(model.X[r, u, t] for u in model.U and not model.H_u) == 0
-    # model.NoYoungFolks = pyomo.Constraint(model.Ri, model.U, model.T, rule = Cons16)
+    def Cons16(model, u, t, y):
+        for u in model.U:
+            for t in model.T:
+                for y in model.Y:
+                    if not y in H_u_dict[u]:
+                        return sum(model.X[r, u, t] for r in model.R_y[y]) == 0
+    
+    model.AgeAppropariteRotations = pyomo.Constraint(model.U, model.T, model.Y, rule = Cons16)
+
 
     # Solve the problem
     opt = SolverFactory("glpk")
     instance = model.create_instance(data)
-    # instance.pprint()
+    instance.X.pprint()
     results = opt.solve(instance)
-    instance.display()
+    #instance.display()
 
 def main():
     file = "sample_data/DataFile-small.xlsx"
     model_data = read_excel(file)
-    create_model(data=model_data, policy_type="4+1")
+    create_model(data=model_data, policy_type="4+1", model_np=26)
 
 main()
