@@ -4,7 +4,9 @@ sched.api.py: Library handling resident scheduler model
 """
 
 import importlib
+import json
 import os
+import re
 
 from pathlib import Path
 from pyomo.environ import *
@@ -54,6 +56,7 @@ class ModelSolver(object):
         self._optimizer = None
         self._solved = False
         self._vars = None
+        self._model_module = None
 
         if not isinstance(model_file, str):
             raise TypeError("Path must be a string")
@@ -69,11 +72,11 @@ class ModelSolver(object):
 
                 # Import module using import lib
                 spec = importlib.util.spec_from_file_location(_mod, model_file)
-                _model_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(_model_module)
+                self._model_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(self._model_module)
 
                 # Get model file from module
-                self._model = _model_module.model
+                self._model = self._model_module.model
                 self._optimizer = SolverFactory("glpk")
             except ImportError as err:
                 raise err
@@ -101,6 +104,8 @@ class ModelSolver(object):
             else:
                 raise OSError("Data file not found")
 
+        #self._model_data = self._model_module.read_excel(data_file)
+        #self._model = self._model_module.create_model(data=self._model_data, policy_type="4+1")
         self._instance = self._model.create_instance(self._data)
 
     def solve(self):
@@ -116,12 +121,13 @@ class ModelSolver(object):
             raise AttributeError("Model not ready for solving")
 
         # Extract variables
-        self._vars = {}
-        for _var in self._instance.component_objects(Var, active=True):
-            _v_var = getattr(self._instance, str(_var))
-            self._vars[_v_var.name] = {}
-            for index in _v_var:
-                self._vars[_v_var.name][index] = _v_var[index].value
+
+        #self._vars = {}
+        #for _var in self._instance.component_objects(Var, active=True):
+        #    _v_var = getattr(self._instance, str(_var))
+        #    self._vars[_v_var.name] = {}
+        #    for index in _v_var:
+        #        self._vars[_v_var.name][index] = _v_var[index].value
 
         # Extract parameters
         self._params = {}
@@ -155,6 +161,47 @@ class ModelSolver(object):
                     _v_con[index].upper.__str__()
                 self._constraints[_v_con.name]['body'] = \
                     _v_con[index].body.__call__()
+
+    def post_process(self):
+        vars = set()
+        objs = set()
+        data = {}
+        f = {}
+
+        for i in range(len(self._instance.solutions.solutions)):
+            data[i] = {}
+            f[i] = {}
+            for var in self._instance.solutions.solutions[i]._entry["variable"]:
+                varname = self._instance.solutions.solutions[i]._entry["variable"][var][0]().name
+                vars.add(varname)
+                data[i][varname] = self._instance.solutions.solutions[i]._entry["variable"][var][1]["Value"]
+        
+            for obj in self._instance.solutions.solutions[i]._entry["objective"]:
+                objname = self._instance.solutions.solutions[i]._entry["objective"][obj][0]().name
+                objs.add(objname)
+                f[i][objname] = self._instance.solutions.solutions[i]._entry["objective"][obj][1]["Value"]
+                break
+
+        rows = []
+        vars = list(vars)
+        vars.sort()
+        objs = list(objs)
+        objs.sort()
+        dicto = {}
+        for var in vars:
+            m = re.search("^X\\[(\d+),(\w+),(\d+)\\]$", var)
+            for i in range(len(self._instance.solutions.solutions)):
+                if data[i].get(var, None):
+                    if int(m.group(1)) not in dicto:
+                        dicto[int(m.group(1))] = {}
+                    dicto[int(m.group(1))][int(m.group(3))] = m.group(2)
+                else:
+                    if int(m.group(1)) not in dicto:
+                        dicto[int(m.group(1))] = {}
+                    if int(m.group(3)) not in dicto[int(m.group(1))]:
+                        dicto[int(m.group(1))][int(m.group(3))] = "Vacation"
+
+        return json.dumps(dicto)
 
 
 if __name__ == "__main__":
