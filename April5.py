@@ -69,34 +69,34 @@ model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximizat
 
 # model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p + s+1)), rule = Cons9)
 
-def Cons10(model):
-    for c in model.C:
-        print(c)
-        for r in model.R:
-            print(r)
-            sumofX = 0
-            t = 1
-            while t <= (1 + 1):
-                sumofX += model.X[r,c,t]
-                print(sumofX)
-                t += 1
-                print(t)
-            if sumofX != 1:
-                return pyomo.Constraint.Infeasible
+# def Cons10(model):
+#     for c in model.C:
+#         print(c)
+#         for r in model.R:
+#             print(r)
+#             sumofX = 0
+#             t = 1
+#             while t <= (1 + 1):
+#                 sumofX += model.X[r,c,t]
+#                 print(sumofX)
+#                 t += 1
+#                 print(t)
+#             if sumofX != 1:
+#                 return pyomo.Constraint.Infeasible
     
-    return pyomo.Constraint.Feasible
+#     return pyomo.Constraint.Feasible
 
-model.FirstClinic = pyomo.Constraint(rule = Cons10)
+# model.FirstClinic = pyomo.Constraint(rule = Cons10)
 
-def Cons10test (model, r, c):
-    return sum(model.X[r,c,t] for t in list(range(1, model.naught_p[currentpolicy] + model.s[currentpolicy]+1))) == model.s[currentpolicy]
+# def Cons10test (model, r, c):
+#     return sum(model.X[r,c,t] for t in list(range(1, model.naught_p[currentpolicy] + model.s[currentpolicy]+1))) == model.s[currentpolicy]
 
-model.FistClinictest = pyomo.Constraint(model.R, model.C, rule = Cons10test)
+# model.FistClinictest = pyomo.Constraint(model.R, model.C, rule = Cons10test)
 
-def Cons10test2 (model, r, c):
-    return sum(model.X[r,c,t] for t in model.T) == model.s[currentpolicy]
+# def Cons10test2 (model, r, c):
+#     return sum(model.X[r,c,t] for t in model.T) == model.s[currentpolicy]
     
-model.FistClinictest2 = pyomo.Constraint(model.R, model.C, rule = Cons10test2)
+# model.FistClinictest2 = pyomo.Constraint(model.R, model.C, rule = Cons10test2)
 
 def Cons10test3 (model, r, c):
     return sum(model.X[r,c,t] for t in model.T if t <= model.naught_p[currentpolicy] + model.s[currentpolicy]) == model.s[currentpolicy]
