@@ -113,3 +113,7 @@ sample_data/~$mandatory_units_and clinic_groups.xlsx
 sample_data/~$Rotations_already_performed_by_R2_and_R3.xlsx
 Pyomo - Optimization Modeling in Python, Second Edition.pdf
 sample_data/~$DataFile-small.xlsx
+after.txt
+before.txt
+log.txt
+results.txt
