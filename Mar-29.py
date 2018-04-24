@@ -16,7 +16,7 @@ def read_excel(filename):
         units = xls.parse('Unit definitions').set_index('Unit')
         residents = xls.parse('Parameters').set_index('Resident_ID')
         history = xls.parse('Past').set_index('Resident_ID')
-        sets = xls.parse('Sets').set_index("Clinic_Group")
+        sets = xls.parse('Clinic Groups').set_index("Clinic_Group")
         
     data = {
         'Units': units,
@@ -107,7 +107,7 @@ def create_model(data, policy_type="4+1", model_np=52, model_v=1):
     model.Theta = pyomo.Set(
         within=model.U,
         initialize=model.data["Units"].query(
-            "round_1 == 'Yes'").index)
+            "Critical_Unit == 'Yes'").index)
     # model.S is the standby unit
     model.S = pyomo.Set()
     # model.P is the clinic protational policy
