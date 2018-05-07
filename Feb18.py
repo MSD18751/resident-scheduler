@@ -29,12 +29,16 @@ model.P = pyomo.Set()   # a set of the types of the rotation policies
 
 
 currentpolicy = "one_one"
+policy = 1
 model_np = 4
+naught_p = policy
 
 # ---Define parameters---
 model.psi = pyomo.Param(model.R, model.T) # the vacation preference of resident r for week t
 model.naught_p = pyomo.Param(model.P) # the number of weeks between clinical rotations
+naught_p = policy
 model.s = pyomo.Param(model.P) # the number of weeks a clinical rotation lasts
+s = 1
 model.alpha_dict = {}
 model.alpha_dict[("Clinic1", "min")] = 2
 model.alpha_dict[("Clinic2", "min")] = 2
@@ -51,6 +55,36 @@ def obj(model): # objective to satisfy resident vacation preferences
 model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximization problem of the function defined above
 
 # ---Define constraints---
+# def Cons9(model, r, c, t):
+#     for r in model.R:
+#         for c in model.C:
+#             for t in list(range(1, model.naught_p[currentpolicy] + model.s[currentpolicy]+1)):
+#                 sumofX = 0
+#                 q = 0
+#                 while t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy])) <= model_np:
+#                     sumofX = sumofX + model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]
+#                     q = q + 1
+#                 return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
+#                 #return sumofX >= model.alpha_dict[(c,"min")]
+
+# model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p + s+1)), rule = Cons9)
+
+# def Cons10(model, r, c):
+#     for r in model.R:
+#         for c in model.C:
+#             sumofX = 0
+#             t = 1
+#             while t <= (model.naught_p[currentpolicy] + model.s[currentpolicy]):
+#                 sumofX = sumofX + model.X[r,c,t]
+#                 t = t + 1
+#             return sumofX == 1
+
+# model.FirstClinic = pyomo.Constraint(model.R, model.C, rule = Cons10)
+
+#def Cons11(model, ):
+    
+#model.
+
 def Cons14(model, t, u):
     return 1 <= sum(model.X[r,u,t] for r in model.R) <= 3    # make sure at least 2 residents are working unit u every week
 
@@ -61,24 +95,7 @@ def Cons15(model, r, t):
 
 model.NoClones = pyomo.Constraint(model.R, model.T, rule = Cons15)
 
-def Cons9(model, r, c, t):
-    for r in model.R:
-        for c in model.C:
-            for t in list(range(1,2)):
-                sumofX = 0
-                q = 0
-                while t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy])) <= model_np:
-                    sumofX = sumofX + model.X[r,c,t + (q * (model.naught_p[currentpolicy] + model.s[currentpolicy]))]
-                    q = q + 1
-                return sumofX >= model.alpha_dict[(c,"min")] * model.W[r,c,t]
 
-model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1,2)), rule = Cons9)
-
-#def Cons9(model, t, r, c):
- #   return sum(model.X[r,c,min(t+q(model.naught_p+model.s),model.np)] 
-  #  >= model.alpha_dict[c,min] * model.W[r,c,t] for q in range(model.alpha_dict[c,min])) # Establishes rotation policy
-#model.naught_p[currentpolicy]+model.s[currentpolicy])
-#model.ClinicRotation = pyomo.Constraint(range(model.naught_p + model.s), model.R, model.C, rule = Cons9)
 
 # ---Create an instance---
 instance = model.create_instance("Feb18.dat")

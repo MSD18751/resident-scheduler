@@ -69,6 +69,11 @@ model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximizat
 
 # model.ClinicRotation = pyomo.Constraint(model.R, model.C, list(range(1, naught_p + s+1)), rule = Cons9)
 
+def Cons9(model, r, c, t):
+       return sum(model.X[r,c,min(t+q*(model.naught_p[currentpolicy] + model.s[currentpolicy]), model_np )] from q in list(range(0,model.alpha_dic[(c,"min")])))>= model.alpha_dic[(c,"min")]*model.W[r,c,t]
+   
+model.Rule9=pyomo.Constraint(model.R, model.C, t in list(range(1,(model.naught_p[currentpolicy] + model.s[currentpolicy])),rule=Cons9))
+
 # def Cons10(model):
 #     for c in model.C:
 #         print(c)
@@ -93,15 +98,20 @@ model.obj = pyomo.Objective(rule = obj, sense = pyomo.maximize)    # a maximizat
 
 # model.FistClinictest = pyomo.Constraint(model.R, model.C, rule = Cons10test)
 
+def Cons10test2 (model, r, c): 
+    return sum(model.X[r,c,t] for t in list(range(1,model.naught_p[currentpolicy] + model.s[currentpolicy]))) == model.s[currentpolicy] 
+     
+model.FistClinictest2 = pyomo.Constraint(model.R, model.C, rule = Cons10test2)
+
 # def Cons10test2 (model, r, c):
 #     return sum(model.X[r,c,t] for t in model.T) == model.s[currentpolicy]
     
 # model.FistClinictest2 = pyomo.Constraint(model.R, model.C, rule = Cons10test2)
 
-def Cons10test3 (model, r, c):
-    return sum(model.X[r,c,t] for t in model.T if t <= model.naught_p[currentpolicy] + model.s[currentpolicy]) == model.s[currentpolicy]
+# def Cons10test3 (model, r, c):
+#     return sum(model.X[r,c,t] for t in model.T if t <= model.naught_p[currentpolicy] + model.s[currentpolicy]) == model.s[currentpolicy]
     
-model.FistClinictest3 = pyomo.Constraint(model.R, model.C, rule = Cons10test3)
+# model.FistClinictest3 = pyomo.Constraint(model.R, model.C, rule = Cons10test3)
 
 
 def Cons14(model, t, u):
